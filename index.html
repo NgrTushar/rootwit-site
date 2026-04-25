@@ -437,8 +437,8 @@ function PipelineViz() {
       <div className="reveal" style={{ textAlign:'center', marginBottom:'2.5rem' }}>
         <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.78rem', color:'var(--cyan)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'0.75rem' }}>How it works</div>
         <h2 style={{ fontSize:'clamp(1.8rem,3.5vw,2.4rem)', fontWeight:800, letterSpacing:'-0.03em' }}>
-          Your data, always moving.<br/>
-          <span style={{ color:'var(--muted)', fontWeight:500 }}>Never silently stopped.</span>
+          Postgres to BigQuery.<br/>
+          <span style={{ color:'var(--muted)', fontWeight:500 }}>Nothing lost in between.</span>
         </h2>
       </div>
       <div className="reveal" style={{ maxWidth:820, margin:'0 auto', position:'relative' }}>
@@ -657,21 +657,21 @@ function Hero() {
         </div>
 
         <h1 style={{ fontSize:'clamp(2.4rem, 5.5vw, 4rem)', fontWeight:800, lineHeight:1.12, letterSpacing:'-0.03em', marginBottom:'1.5rem', textWrap:'balance' }}>
-          Reliable{' '}
+          A simple{' '}
           <span className="arrow-line">
             <span style={{ color:'#e8eaf0' }}>Postgres</span>
             {' '}→{' '}
             <span style={{ color:'#e8eaf0' }}>BigQuery</span>
           </span>{' '}
-          sync.<br/>
-          <span className="grad-text">For teams tired of Airbyte</span>{' '}
-          <span style={{ color:'var(--muted)', fontWeight:600 }}>breaking silently.</span>
+          sync tool.<br/>
+          <span className="grad-text">Built after one too many</span>{' '}
+          <span style={{ color:'var(--muted)', fontWeight:600 }}>silent failures.</span>
         </h1>
 
         <p style={{ fontSize:'1.15rem', color:'var(--muted)', lineHeight:1.7, maxWidth:600, margin:'0 auto 2.5rem', fontWeight:400 }}>
-          One Go binary. Zero Kubernetes. No silent failures, no bill shock.
-          RootWit tracks cursors, detects schema changes, and recovers from crashes—
-          so your data pipeline is as reliable as your production database.
+          A single Go binary that reads your Postgres WAL and writes rows into BigQuery.
+          It tracks a cursor, handles schema changes, and if something goes wrong —
+          it stops, tells you, and picks up right where it left off.
         </p>
 
         {/* Terminal snippet */}
@@ -811,7 +811,7 @@ function Features() {
       iconBg: 'var(--cyan-dim)',
       iconColor: 'var(--cyan)',
       title: 'Single Go Binary',
-      body: "Download one file. Run it. That's the entire deployment story. No Docker Compose, no Kubernetes operator, no Helm chart archaeology at 2am. RootWit ships as a 8 MB statically-linked binary that runs anywhere Go runs.",
+      body: "Download it, run it. No Docker Compose, no Kubernetes setup, no config files spread across three places. It's one statically-linked binary — around 8 MB — and it runs wherever Go runs.",
       mono: './rootwit sync',
     },
     {
@@ -819,7 +819,7 @@ function Features() {
       iconBg: 'var(--violet-dim)',
       iconColor: 'var(--violet)',
       title: 'No Bill Shock',
-      body: "Fivetran charges per monthly active row. For a mid-size startup syncing a few tables, that's $400–$2,000/month before you've shipped a single analyst report. RootWit is free to self-host, forever. Pay for compute, not for permissions.",
+      body: "Fivetran charges per monthly active row. Syncing a few tables can quietly become $400–$2,000 a month. RootWit is free to self-host. You pay for compute, not for the number of rows you move.",
       mono: 'Pricing: $0 / MTU',
     },
     {
@@ -827,7 +827,7 @@ function Features() {
       iconBg: 'rgba(82,216,124,0.1)',
       iconColor: '#52d87c',
       title: 'Crash-Safe by Design',
-      body: 'RootWit persists its cursor and write-ahead log position to disk after every successful batch. On restart, it picks up exactly where it left off — no duplicates, no gaps. Schema drift is detected automatically before it causes a bad insert.',
+      body: 'After every successful batch, the cursor position is saved to disk. If it crashes, it restarts from the last safe point — no duplicates, no gaps. New columns are detected before they cause a failed insert.',
       mono: 'lsn=0/3A7F210 ✓ safe',
     },
   ];
@@ -836,8 +836,8 @@ function Features() {
       <div className="reveal" style={{ textAlign:'center', marginBottom:'3.5rem' }}>
         <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.78rem', color:'var(--cyan)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'0.75rem' }}>Why RootWit</div>
         <h2 style={{ fontSize:'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight:800, letterSpacing:'-0.03em' }}>
-          Built for startups who ship fast<br/>
-          <span style={{ color:'var(--muted)', fontWeight:500 }}>and can't afford pipelines that don't.</span>
+          Three things I made sure<br/>
+          <span style={{ color:'var(--muted)', fontWeight:500 }}>to get right.</span>
         </h2>
       </div>
 
@@ -873,7 +873,7 @@ function Comparison() {
   return (
     <section style={{ padding:'4rem 2rem 6rem', maxWidth:900, margin:'0 auto' }}>
       <div className="reveal" style={{ textAlign:'center', marginBottom:'2.5rem' }}>
-        <h2 style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:800, letterSpacing:'-0.03em' }}>How we stack up</h2>
+        <h2 style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:800, letterSpacing:'-0.03em' }}>How it compares</h2>
       </div>
       <div className="reveal glass" style={{ borderRadius:14, overflow:'hidden' }}>
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -911,13 +911,13 @@ function Founder() {
         <div style={{ flex:1, minWidth:260 }}>
           <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.75rem', color:'var(--cyan)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:'0.75rem' }}>Founder's Note</div>
           <p style={{ fontSize:'0.95rem', lineHeight:1.8, color:'var(--muted)' }}>
-            I spent two late nights debugging a silent Airbyte connector failure that had been dropping rows for three days.
-            Nobody noticed — until the revenue dashboard looked wrong. I vowed to build something that 
-            <span style={{ color:'var(--text)', fontWeight:500 }}> tells you when it breaks, never loses data, and takes thirty seconds to deploy.</span>
-            {' '}That's RootWit. Small, honest, and obsessively reliable.
+            I spent a couple of late nights chasing a silent Airbyte failure that had been dropping rows for three days.
+            Nobody caught it until the dashboard looked wrong.
+            <span style={{ color:'var(--text)', fontWeight:500 }}> I don't think you should have to debug that.</span>
+            {' '}So I built something simpler — honest about what it's doing, quick to tell you if something's wrong, and easy enough to set up that you don't need a whole afternoon.
           </p>
-          <div style={{ marginTop:'1rem', fontWeight:600, fontSize:'0.9rem' }}>Founder, RootWit</div>
-          <div style={{ fontSize:'0.8rem', color:'var(--muted)' }}>Building in public · India 🇮🇳</div>
+          <div style={{ marginTop:'1rem', fontWeight:600, fontSize:'0.9rem' }}>Tushar · Founder, RootWit</div>
+          <div style={{ fontSize:'0.8rem', color:'var(--muted)' }}>India 🇮🇳</div>
         </div>
       </div>
     </section>
@@ -934,10 +934,10 @@ function FinalCTA() {
       <div className="orb orb-cyan" style={{ width:500, height:300, top:'20%', left:'50%', transform:'translateX(-50%)', opacity:0.4 }}/>
       <div className="reveal" style={{ position:'relative', zIndex:2, maxWidth:600, margin:'0 auto' }}>
         <h2 style={{ fontSize:'clamp(1.8rem,4vw,2.8rem)', fontWeight:800, letterSpacing:'-0.03em', marginBottom:'1rem' }}>
-          Stop firefighting your data pipeline.
+          Your pipeline should just work.
         </h2>
         <p style={{ color:'var(--muted)', lineHeight:1.7, marginBottom:'2.5rem' }}>
-          Join early-access and get a 1:1 migration call. We'll move you off Airbyte or Fivetran in under an hour.
+          Leave your email and I'll reach out personally. Happy to help you get set up or move over from something else.
         </p>
         {!submitted ? (
           <form onSubmit={submit} style={{ display:'flex', gap:'0.75rem', maxWidth:420, margin:'0 auto', flexWrap:'wrap', justifyContent:'center' }}>
