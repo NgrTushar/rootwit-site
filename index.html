@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RootWit — Reliable Postgres → BigQuery Sync</title>
+<title>RootWit — Fault-Tolerant Data Replication in Go</title>
+<meta name="description" content="RootWit is a self-hosted data replication engine in Go. Postgres, MySQL, SQLite and Razorpay into BigQuery or DuckDB. Schema evolution, crash recovery, at-least-once delivery. Single binary, no Docker."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
@@ -397,18 +398,18 @@ function Icon({ name, size = 18, color = 'currentColor', style }) {
 /* ─── Log Ticker ─── */
 function LogTicker() {
   const events = [
-    { color:'#52d87c', text:'✓ Synced 12,048 rows → bigquery.prod.users' },
-    { color:'#52dbd4', text:'⚡ Schema change detected: orders.discount_code added' },
-    { color:'#52dbd4', text:'✓ Cursor saved lsn=0/4B2A100' },
+    { color:'#52d87c', text:'✓ postgres.users → bigquery.prod.users — 12,048 rows' },
+    { color:'#52dbd4', text:'⚡ Schema change: orders.discount_code added (widen, safe)' },
+    { color:'#52dbd4', text:'✓ Cursor checkpointed updated_at=2026-08-28T14:02:31Z' },
     { color:'#f0c96e', text:'⚠ Retrying batch after network hiccup (attempt 2/3)' },
-    { color:'#52d87c', text:'✓ Synced 8,391 rows → bigquery.prod.events' },
-    { color:'#52dbd4', text:'✓ WAL position confirmed. No gaps.' },
-    { color:'#52d87c', text:'✓ Synced 31,774 rows → bigquery.prod.transactions' },
+    { color:'#52d87c', text:'✓ mysql.events → bigquery.prod.events — 8,391 rows' },
+    { color:'#52dbd4', text:'✓ State written atomically. No gaps.' },
+    { color:'#52d87c', text:'✓ razorpay.payments → duckdb — 1,204 rows' },
     { color:'#9b7ff4', text:'↻ Incremental sync started at 14:02:31 UTC' },
     { color:'#52d87c', text:'✓ Schema snapshot updated. 3 tables tracked.' },
-    { color:'#f0c96e', text:'⚡ New column: payments.upi_reference — auto-migrated' },
-    { color:'#52dbd4', text:'✓ Heartbeat OK. Pipeline healthy.' },
-    { color:'#52d87c', text:'✓ Synced 5,220 rows → bigquery.prod.sessions' },
+    { color:'#f0c96e', text:'⚡ orders.refund_id type incompatible — table halted, alert sent' },
+    { color:'#52dbd4', text:'✓ All tables current. Pipeline healthy.' },
+    { color:'#52d87c', text:'✓ sqlite.sessions → duckdb — 5,220 rows' },
   ];
   const doubled = [...events, ...events];
   return (
@@ -437,7 +438,7 @@ function PipelineViz() {
       <div className="reveal" style={{ textAlign:'center', marginBottom:'2.5rem' }}>
         <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.78rem', color:'var(--cyan)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'0.75rem' }}>How it works</div>
         <h2 style={{ fontSize:'clamp(1.8rem,3.5vw,2.4rem)', fontWeight:800, letterSpacing:'-0.03em' }}>
-          Postgres to BigQuery.<br/>
+          Your source to your warehouse.<br/>
           <span style={{ color:'var(--muted)', fontWeight:500 }}>Nothing lost in between.</span>
         </h2>
       </div>
@@ -471,9 +472,9 @@ function PipelineViz() {
           {/* ── Postgres node ── */}
           <rect x="20" y="70" width="190" height="80" rx="12" fill="rgba(255,255,255,0.04)" stroke="rgba(82,219,212,0.25)" strokeWidth="1.5"/>
           <rect x="20" y="70" width="190" height="80" rx="12" fill="none" stroke="rgba(82,219,212,0.08)" strokeWidth="8"/>
-          <text x="115" y="100" textAnchor="middle" fill="#e8eaf0" fontSize="13" fontFamily="var(--font-mono)" fontWeight="600">PostgreSQL</text>
-          <text x="115" y="120" textAnchor="middle" fill="#6b7099" fontSize="10" fontFamily="var(--font-mono)">prod-db:5432</text>
-          <text x="115" y="136" textAnchor="middle" fill="#52dbd4" fontSize="9" fontFamily="var(--font-mono)">WAL streaming</text>
+          <text x="115" y="98" textAnchor="middle" fill="#e8eaf0" fontSize="13" fontFamily="var(--font-mono)" fontWeight="600">Your source</text>
+          <text x="115" y="117" textAnchor="middle" fill="#6b7099" fontSize="9" fontFamily="var(--font-mono)">postgres · mysql · sqlite</text>
+          <text x="115" y="136" textAnchor="middle" fill="#52dbd4" fontSize="9" fontFamily="var(--font-mono)">cursor-based reads</text>
 
           {/* ── RootWit node (center glow) ── */}
           <circle cx="380" cy="110" r="64" fill="rgba(82,219,212,0.04)" stroke="rgba(82,219,212,0.3)" strokeWidth="1.5" filter="url(#glow-cyan)"/>
@@ -488,9 +489,9 @@ function PipelineViz() {
           {/* ── BigQuery node ── */}
           <rect x="550" y="70" width="190" height="80" rx="12" fill="rgba(255,255,255,0.04)" stroke="rgba(155,127,244,0.25)" strokeWidth="1.5"/>
           <rect x="550" y="70" width="190" height="80" rx="12" fill="none" stroke="rgba(155,127,244,0.08)" strokeWidth="8"/>
-          <text x="645" y="100" textAnchor="middle" fill="#e8eaf0" fontSize="13" fontFamily="var(--font-mono)" fontWeight="600">BigQuery</text>
-          <text x="645" y="120" textAnchor="middle" fill="#6b7099" fontSize="10" fontFamily="var(--font-mono)">your-project.dataset</text>
-          <text x="645" y="136" textAnchor="middle" fill="#9b7ff4" fontSize="9" fontFamily="var(--font-mono)">batch inserts</text>
+          <text x="645" y="98" textAnchor="middle" fill="#e8eaf0" fontSize="13" fontFamily="var(--font-mono)" fontWeight="600">Your warehouse</text>
+          <text x="645" y="117" textAnchor="middle" fill="#6b7099" fontSize="9" fontFamily="var(--font-mono)">bigquery · duckdb</text>
+          <text x="645" y="136" textAnchor="middle" fill="#9b7ff4" fontSize="9" fontFamily="var(--font-mono)">batched writes</text>
 
           {/* ── Flowing packets on path1 ── */}
           {packets1.map((delay, i) => (
@@ -513,7 +514,7 @@ function PipelineViz() {
           ))}
 
           {/* ── Step labels below ── */}
-          <text x="115" y="174" textAnchor="middle" fill="#3a3d52" fontSize="9" fontFamily="var(--font-mono)" letterSpacing="1">① CAPTURE</text>
+          <text x="115" y="174" textAnchor="middle" fill="#3a3d52" fontSize="9" fontFamily="var(--font-mono)" letterSpacing="1">① READ</text>
           <text x="380" y="192" textAnchor="middle" fill="#3a3d52" fontSize="9" fontFamily="var(--font-mono)" letterSpacing="1">② TRANSFORM + PROTECT</text>
           <text x="645" y="174" textAnchor="middle" fill="#3a3d52" fontSize="9" fontFamily="var(--font-mono)" letterSpacing="1">③ DELIVER</text>
         </svg>
@@ -521,9 +522,9 @@ function PipelineViz() {
         {/* Step cards below diagram */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginTop:'2rem' }}>
           {[
-            { n:'01', color:'var(--cyan)', title:'Capture', body:'RootWit tails the Postgres WAL — the same stream your replicas use. Every insert, update, delete captured in order.' },
-            { n:'02', color:'var(--cyan)', title:'Protect', body:'Cursors and batch state are flushed to disk atomically. Crash mid-batch? Resume from the exact last safe position.' },
-            { n:'03', color:'var(--violet)', title:'Deliver', body:'Rows land in BigQuery in micro-batches. Schema changes are applied ahead of writes — never a rejected insert.' },
+            { n:'01', color:'var(--cyan)', title:'Read', body:'RootWit reads each table on a cursor column — a timestamp or an incrementing id. Only rows newer than the last checkpoint are pulled. No replication slots, no superuser grants.' },
+            { n:'02', color:'var(--cyan)', title:'Protect', body:'Every table runs in its own goroutine. The cursor is written to disk atomically after the destination confirms the batch. Crash mid-sync? Resume from the last committed position.' },
+            { n:'03', color:'var(--violet)', title:'Deliver', body:'Rows land in batches. Schema changes are classified and applied ahead of the write — safe ones automatically, incompatible ones halt that table and alert you.' },
           ].map(s => (
             <div key={s.n} style={{ padding:'1.25rem', background:'rgba(255,255,255,0.025)', border:'1px solid var(--border)', borderRadius:10 }}>
               <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.7rem', color:s.color, marginBottom:'0.4rem', letterSpacing:'0.08em' }}>{s.n}</div>
@@ -596,6 +597,7 @@ function Nav() {
       </div>
       <div style={{ display:'flex', alignItems:'center', gap: '0.5rem' }}>
         <a href="#features" className="btn-ghost" style={{ fontSize:'0.85rem', border:'none', opacity:0.7 }}>Features</a>
+        <a href="#connectors" className="btn-ghost" style={{ fontSize:'0.85rem', border:'none', opacity:0.7 }}>Connectors</a>
         <a href="#roadmap" className="btn-ghost" style={{ fontSize:'0.85rem', border:'none', opacity:0.7 }}>Roadmap</a>
         <a href="https://github.com/NgrTushar/rootwit" target="_blank" className="btn-ghost">
           <Icon name="github" size={15}/>
@@ -657,31 +659,33 @@ function Hero() {
         </div>
 
         <h1 style={{ fontSize:'clamp(2.4rem, 5.5vw, 4rem)', fontWeight:800, lineHeight:1.12, letterSpacing:'-0.03em', marginBottom:'1.5rem', textWrap:'balance' }}>
-          A simple{' '}
+          A reliable{' '}
           <span className="arrow-line">
-            <span style={{ color:'#e8eaf0' }}>Postgres</span>
+            <span style={{ color:'#e8eaf0' }}>database</span>
             {' '}→{' '}
-            <span style={{ color:'#e8eaf0' }}>BigQuery</span>
+            <span style={{ color:'#e8eaf0' }}>warehouse</span>
           </span>{' '}
-          sync tool.<br/>
+          replication engine.<br/>
           <span className="grad-text">Built after one too many</span>{' '}
           <span style={{ color:'var(--muted)', fontWeight:600 }}>silent failures.</span>
         </h1>
 
         <p style={{ fontSize:'1.15rem', color:'var(--muted)', lineHeight:1.7, maxWidth:600, margin:'0 auto 2.5rem', fontWeight:400 }}>
-          A single Go binary that reads your Postgres WAL and writes rows into BigQuery.
-          It tracks a cursor, handles schema changes, and if something goes wrong —
-          it stops, tells you, and picks up right where it left off.
+          A single Go binary that moves rows from Postgres, MySQL, SQLite or Razorpay into
+          BigQuery or DuckDB. It checkpoints a cursor after every batch, classifies schema
+          changes before they break anything, and if something goes wrong — it stops,
+          tells you, and picks up right where it left off.
         </p>
 
         {/* Terminal snippet */}
         <div className="terminal" style={{ maxWidth:480, margin:'0 auto 2.5rem', textAlign:'left' }}>
           <div className="terminal-line">
-            <div><span className="t-prompt">$ </span><span className="t-cmd">./rootwit sync --source postgres --dest bigquery</span></div>
+            <div><span className="t-prompt">$ </span><span className="t-cmd">./rootwit --config config.yaml --once</span></div>
             <div className="t-out">Connecting to postgres://prod-db:5432/myapp...</div>
-            <div className="t-success">✓ Schema snapshot saved. Cursor at lsn=0/3A7F210</div>
+            <div className="t-success">✓ Schema snapshot saved. 3 tables tracked.</div>
             <div className="t-success">✓ Synced 48,392 rows in 1.2s</div>
-            <div className="t-warn">⚡ New column detected: users.referral_code — auto-migrated</div>
+            <div className="t-warn">⚡ New column: users.referral_code — safe, auto-applied</div>
+            <div className="t-success">✓ Cursor checkpointed. State written atomically.</div>
             <div><span className="t-prompt">$ </span><span className="cursor" style={{ color:'var(--cyan)' }}>▌</span></div>
           </div>
         </div>
@@ -761,10 +765,10 @@ function Stats() {
   return (
     <div style={{ borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', background:'rgba(255,255,255,0.015)' }}>
       <div style={{ maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4,1fr)', padding:'1.75rem 2rem', gap:'1rem' }}>
-        <StatItem label="Binary size"        value="~8 MB"   numeric={8}   prefix="~" suffix=" MB" />
-        <StatItem label="Row sync latency"   value="< 2s"    numeric={2}   prefix="< " suffix="s"  color="var(--cyan)" />
-        <StatItem label="Data loss guarantee" value="100%"   numeric={100} suffix="%"               color="#52d87c" />
-        <StatItem label="Monthly SaaS bill"  value="$0"      numeric={0}   prefix="$"               color="var(--violet)" />
+        <StatItem label="Connectors"           value="7"      numeric={7}                            />
+        <StatItem label="Runtime dependencies" value="0"      numeric={0}   color="var(--cyan)"      />
+        <StatItem label="Containers to run"    value="0"      numeric={0}   color="#52d87c"          />
+        <StatItem label="Monthly SaaS bill"    value="$0"     numeric={0}   prefix="$" color="var(--violet)" />
       </div>
     </div>
   );
@@ -773,12 +777,14 @@ function Stats() {
 /* ─── Roadmap ─── */
 function Roadmap() {
   const rows = [
-    { icon:'✅', feature:'Postgres → BigQuery sync', desc:'Full table + incremental sync with cursor tracking', status:'available', label:'Available now' },
-    { icon:'✅', feature:'Schema change detection', desc:'New columns auto-detected and migrated downstream', status:'available', label:'Available now' },
-    { icon:'✅', feature:'Silent failure alerts', desc:'Immediate notifications when sync stalls or errors out', status:'available', label:'Available now' },
-    { icon:'🔨', feature:'Stripe / Razorpay connectors', desc:'Sync payment events directly into your warehouse', status:'building', label:'Building Q2' },
-    { icon:'🔨', feature:'Managed hosted version', desc:'We run the infra, you just connect your credentials', status:'building', label:'Building Q2' },
-    { icon:'📋', feature:'Web dashboard', desc:'Monitor sync health, view logs, manage connections', status:'planned', label:'Planned Q3' },
+    { icon:'✅', feature:'Postgres, MySQL & SQLite sources', desc:'Full-refresh, incremental and append-only modes with cursor checkpointing', status:'available', label:'Available now' },
+    { icon:'✅', feature:'BigQuery & DuckDB destinations', desc:'Batched writes, atomic table swap on full refresh. DuckDB runs entirely local — no cloud account needed', status:'available', label:'Available now' },
+    { icon:'✅', feature:'Razorpay connector', desc:'Payments, orders, refunds and customers straight into your warehouse. No US pipeline tool ships this', status:'available', label:'Available now' },
+    { icon:'✅', feature:'Schema evolution', desc:'Four-case classification on every run — add, remove, widen, incompatible. Safe changes apply, breaking ones halt and alert', status:'available', label:'Available now' },
+    { icon:'✅', feature:'Crash recovery & alerting', desc:'Atomic two-phase checkpointing, plus Slack and email alerts on failure, schema change or sync gap', status:'available', label:'Available now' },
+    { icon:'🔨', feature:'Managed hosting', desc:'I run it on your own VPS and keep it running. You connect credentials, nothing else', status:'building', label:'In progress' },
+    { icon:'📋', feature:'Stripe & Cashfree sources', desc:'Rounding out payment coverage after Razorpay', status:'planned', label:'Next' },
+    { icon:'📋', feature:'Web dashboard', desc:'Monitor sync health, view logs, manage connections', status:'planned', label:'Planned' },
   ];
   return (
     <section id="roadmap" style={{ padding:'6rem 2rem', maxWidth:860, margin:'0 auto' }}>
@@ -803,6 +809,56 @@ function Roadmap() {
   );
 }
 
+/* ─── Connectors ─── */
+function Connectors() {
+  const sources = [
+    { name:'PostgreSQL', note:'incremental · append-only · full refresh' },
+    { name:'MySQL',      note:'incremental · append-only · full refresh' },
+    { name:'SQLite',     note:'zero-setup local testing' },
+    { name:'Razorpay',   note:'payments · orders · refunds · customers', flag:true },
+  ];
+  const dests = [
+    { name:'BigQuery', note:'batched inserts · atomic table swap' },
+    { name:'DuckDB',   note:'fully local — no cloud account' },
+    { name:'JSONL',    note:'--dest local, for testing the whole pipeline' },
+  ];
+  const card = (c, color) => (
+    <div key={c.name} style={{ padding:'1rem 1.1rem', background:'rgba(255,255,255,0.025)', border:`1px solid ${c.flag ? 'rgba(155,127,244,0.3)' : 'var(--border)'}`, borderRadius:10 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:'0.35rem' }}>
+        <span style={{ fontWeight:700, fontSize:'0.92rem' }}>{c.name}</span>
+        {c.flag && <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.62rem', color:'var(--violet)', background:'var(--violet-dim)', padding:'2px 7px', borderRadius:20, letterSpacing:'0.05em' }}>INDIA</span>}
+      </div>
+      <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.74rem', color:'var(--muted)', lineHeight:1.5 }}>{c.note}</div>
+    </div>
+  );
+  const head = (t) => ({ fontFamily:'var(--font-mono)', fontSize:'0.72rem', color:'var(--muted)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'0.9rem' });
+  return (
+    <section id="connectors" style={{ padding:'5rem 2rem', maxWidth:1000, margin:'0 auto' }}>
+      <div className="reveal" style={{ textAlign:'center', marginBottom:'3rem' }}>
+        <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.78rem', color:'var(--cyan)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'0.75rem' }}>Connectors</div>
+        <h2 style={{ fontSize:'clamp(1.8rem,3.5vw,2.5rem)', fontWeight:800, letterSpacing:'-0.03em' }}>
+          Seven that work today.<br/>
+          <span style={{ color:'var(--muted)', fontWeight:500 }}>Not seventy that mostly don't.</span>
+        </h2>
+      </div>
+      <div className="reveal" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:'2rem' }}>
+        <div>
+          <div style={head()}>Sources</div>
+          <div style={{ display:'grid', gap:'0.7rem' }}>{sources.map(c => card(c))}</div>
+        </div>
+        <div>
+          <div style={head()}>Destinations</div>
+          <div style={{ display:'grid', gap:'0.7rem' }}>{dests.map(c => card(c))}</div>
+        </div>
+      </div>
+      <p className="reveal" style={{ textAlign:'center', marginTop:'2.5rem', fontSize:'0.86rem', color:'var(--muted)', lineHeight:1.7, maxWidth:600, margin:'2.5rem auto 0' }}>
+        Razorpay is the one I care most about. If you take payments in India, no other pipeline
+        tool will move that data for you — you write the script yourself, or you go without.
+      </p>
+    </section>
+  );
+}
+
 /* ─── Why RootWit / Pillars ─── */
 function Features() {
   const pillars = [
@@ -811,8 +867,8 @@ function Features() {
       iconBg: 'var(--cyan-dim)',
       iconColor: 'var(--cyan)',
       title: 'Single Go Binary',
-      body: "Download it, run it. No Docker Compose, no Kubernetes setup, no config files spread across three places. It's one statically-linked binary — around 8 MB — and it runs wherever Go runs.",
-      mono: './rootwit sync',
+      body: "Download it, run it. No Docker Compose, no Kubernetes, no JVM, no config spread across three places. One binary and one YAML file. It runs on a $5/month VPS with a few MB of RAM overhead.",
+      mono: './rootwit --config config.yaml',
     },
     {
       iconName: 'indian-rupee',
@@ -827,8 +883,8 @@ function Features() {
       iconBg: 'rgba(82,216,124,0.1)',
       iconColor: '#52d87c',
       title: 'Crash-Safe by Design',
-      body: 'After every successful batch, the cursor position is saved to disk. If it crashes, it restarts from the last safe point — no duplicates, no gaps. New columns are detected before they cause a failed insert.',
-      mono: 'lsn=0/3A7F210 ✓ safe',
+      body: 'The cursor advances only after the destination confirms the write, and it is written to disk with a temp-file-and-rename so a crash can never leave it half-written. Restart and it resumes from the last committed position — at-least-once, with a bounded overlap window.',
+      mono: 'cursor checkpointed ✓',
     },
   ];
   return (
@@ -865,7 +921,8 @@ function Comparison() {
     { feature:'Deployment', rootwit:'Single binary', airbyte:'Docker Compose / K8s', fivetran:'SaaS (no control)' },
     { feature:'Schema migration', rootwit:'Auto-detected', airbyte:'Manual / breaks', fivetran:'Managed ($$)' },
     { feature:'Silent failure alerts', rootwit:'Built-in', airbyte:'None by default', fivetran:'Partial' },
-    { feature:'Crash recovery', rootwit:'WAL cursor persist', airbyte:'Fragile', fivetran:'Managed' },
+    { feature:'Crash recovery', rootwit:'Atomic checkpoint', airbyte:'Fragile', fivetran:'Managed' },
+    { feature:'Razorpay source', rootwit:'Built-in', airbyte:'None', fivetran:'None' },
     { feature:'Monthly cost', rootwit:'$0 self-hosted', airbyte:'Infra + eng time', fivetran:'$400–$2k+' },
   ];
   const th = { padding:'0.75rem 1rem', textAlign:'left', fontSize:'0.78rem', fontFamily:'var(--font-mono)', color:'var(--muted)', borderBottom:'1px solid var(--border)', letterSpacing:'0.05em', textTransform:'uppercase' };
@@ -928,7 +985,20 @@ function Founder() {
 function FinalCTA() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const submit = (e) => { e.preventDefault(); if (email) setSubmitted(true); };
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      await fetch("https://formspree.io/f/xbdqbodg", {
+        method: "POST",
+        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "final-cta" })
+      });
+    } catch (err) {
+      console.error("Formspree error:", err);
+    }
+    setSubmitted(true);
+  };
   return (
     <section style={{ position:'relative', padding:'6rem 2rem', textAlign:'center', overflow:'hidden' }}>
       <div className="orb orb-cyan" style={{ width:500, height:300, top:'20%', left:'50%', transform:'translateX(-50%)', opacity:0.4 }}/>
@@ -962,7 +1032,7 @@ function Footer() {
       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
         <div className="logo-dot"/>
         <span style={{ fontWeight:700, fontSize:'0.95rem' }}>RootWit</span>
-        <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft:8 }}>© 2026 · MIT License</span>
+        <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft:8 }}>© 2026 · BSL 1.1</span>
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
         <a href="https://github.com/NgrTushar/rootwit" target="_blank" className="btn-ghost">
@@ -970,7 +1040,7 @@ function Footer() {
           View on GitHub
         </a>
         <a href="#roadmap" className="btn-ghost" style={{ fontSize:'0.82rem' }}>Roadmap</a>
-        <a href="mailto:hello@rootwit.io" className="btn-ghost" style={{ fontSize:'0.82rem' }}>Contact</a>
+        <a href="mailto:tushr.nagr@gmail.com" className="btn-ghost" style={{ fontSize:'0.82rem' }}>Contact</a>
       </div>
     </footer>
   );
@@ -989,6 +1059,7 @@ function App() {
         <PipelineViz/>
         <div className="section-divider"/>
         <Features/>
+        <Connectors/>
         <Roadmap/>
         <Comparison/>
         <Founder/>
